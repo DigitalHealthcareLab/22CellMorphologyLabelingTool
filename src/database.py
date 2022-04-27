@@ -41,3 +41,11 @@ class Database:
     def execute_sql(self, sql: str):
         self.cursor.execute(sql)
         return self.cursor.fetchall()
+
+
+def query_database(sql):
+    database = Database()
+    data_list = database.execute_sql(sql)
+    database.conn.close()
+    del database
+    return data_list
