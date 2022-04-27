@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "2022_tomocube_labeller"
+version = "0.1.0"
+description = ""
+authors = ["MinDong <mdskylover@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+PyMySQL = "^1.0.2"
+streamlit = "^1.8.1"
+
+[tool.poetry.dev-dependencies]
+black = "^22.3.0"
+isort = "^5.10.1"
+pytest = "^7.1.2"
+notebook = "^6.4.11"
+ipykernel = "^6.13.0"
+watchdog = "^2.1.7"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
