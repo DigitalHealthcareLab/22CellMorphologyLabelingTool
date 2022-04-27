@@ -6,7 +6,7 @@ from src.database import Database, query_database
 
 
 def get_default_quality(
-    project_name, image_ids: tuple[str]
+    project_name, image_ids: tuple[int]
 ) -> Union[str, None]:
 
     results = [
@@ -45,7 +45,7 @@ def get_default_quality(
             return None
 
 
-def save_quality(project_name, image_ids: tuple[str], quality):
+def save_quality(project_name, image_ids: tuple[int], quality):
     database = Database()
     num_quality = 0 if quality == "Good" else 1
     for image_id in image_ids:
