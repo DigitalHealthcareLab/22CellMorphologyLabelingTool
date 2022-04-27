@@ -4,4 +4,4 @@
 credentials.json
 token.json
 credentials.json
-image/
+image/*.tiff
