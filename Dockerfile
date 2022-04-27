@@ -22,5 +22,6 @@ RUN poetry config virtualenvs.create false \
 
 # Creating folders, and files for a project:
 COPY . /code
+ADD .env /code/.env
 
-CMD ['streamlit run main.py']
+CMD ["streamlit","run","main.py"]
