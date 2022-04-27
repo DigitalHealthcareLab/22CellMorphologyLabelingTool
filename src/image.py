@@ -1,8 +1,33 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import streamlit as st
 from PIL import Image
+
+from src.database import query_database
+
+
+@dataclass
+class CellImage:
+    image_id: int
+    image_google_id: str
+
+
+def get_images(
+    project_name, patient_id, cell_type, cell_number
+) -> tuple[CellImage, CellImage, CellImage]:
+    sql = f"SELECT image_id, google_drive_file_id, create_date, image_type FROM {project_name}_image WHERE cell_id = (SELECT cell_id FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND cell_number = {cell_number} AND patient_id = {patient_id})"
+    result = query_database(sql)
+    bf = get_cellimage(result, "BRIGHT_FIELD")
+    mip = get_cellimage(result, "MIP")
+    ht = get_cellimage(result, "HOLOTOMOGRAPHY")
+    return bf, mip, ht
+
+
+def get_cellimage(data_list, image_type) -> CellImage:
+    result = [data for data in data_list if data["image_type"] == image_type][0]
+    return CellImage(result["image_id"], result["google_drive_file_id"])
 
 
 def download_image(
