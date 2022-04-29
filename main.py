@@ -27,12 +27,19 @@ def render_sidebar(filter_labeled):
         patient_id = st.selectbox("Patient ID", patient_list, index=0)
 
         cell_type_list = get_cell_type(project_name, patient_id, filter_labeled)
-        cell_type = st.selectbox("Cell type", cell_type_list, index=0)
+
+        if cell_type_list is not None:
+            cell_type = st.selectbox("Cell type", cell_type_list, index=0)
+        else:
+            cell_type = st.selectbox("Cell type", ["Not Available"])
 
         cell_number_list = get_cell_number(
             project_name, patient_id, cell_type, filter_labeled
         )
-        cell_number = st.selectbox("Cell number", cell_number_list, index=0)
+        if cell_number_list is not None:
+            cell_number = st.selectbox("Cell number", cell_number_list, index=0)
+        else:
+            cell_number = st.selectbox("Cell number", ["Not Available"])
 
         def get_total_cell_count(project_name) -> int:
             return query_database(f"SELECT COUNT(*) FROM {project_name}_cell")[
@@ -140,29 +147,35 @@ def main():
         cell_number,
     ) = render_sidebar(filter_labeled)
 
-    bf_cellimage, mip_cellimage, ht_cellimage = get_images(
-        project_name, patient_id, cell_type, cell_number
-    )
+    if (cell_type == "Not Available") | (cell_number == "Not Available"):
+        st.write("Not Available images")
+        st.write(
+            "Please uncheck filter out labeled or check the images really exist."
+        )
+    else:
+        bf_cellimage, mip_cellimage, ht_cellimage = get_images(
+            project_name, patient_id, cell_type, cell_number
+        )
 
-    bf_path = download_image(
-        downloader, bf_cellimage.image_google_id, "image", "bf.tiff"
-    )
-    mip_path = download_image(
-        downloader, mip_cellimage.image_google_id, "image", "mip.tiff"
-    )
+        bf_path = download_image(
+            downloader, bf_cellimage.image_google_id, "image", "bf.tiff"
+        )
+        mip_path = download_image(
+            downloader, mip_cellimage.image_google_id, "image", "mip.tiff"
+        )
 
-    render_images(
-        project_name,
-        bf_cellimage,
-        mip_cellimage,
-        ht_cellimage,
-        bf_path,
-        mip_path,
-    )
+        render_images(
+            project_name,
+            bf_cellimage,
+            mip_cellimage,
+            ht_cellimage,
+            bf_path,
+            mip_path,
+        )
 
-    render_label_buttons(
-        project_name, bf_cellimage, mip_cellimage, ht_cellimage
-    )
+        render_label_buttons(
+            project_name, bf_cellimage, mip_cellimage, ht_cellimage
+        )
 
 
 if __name__ == "__main__":

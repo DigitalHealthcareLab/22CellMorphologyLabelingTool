@@ -1,3 +1,5 @@
+import streamlit as st
+
 from src.database import query_database
 
 
@@ -17,15 +19,21 @@ def get_patient_list(project_name: str):
 
 def get_cell_type(
     project_name: str, patient_id: int, filter_labeled: bool = False
-):
-    sql = (
-        f"SELECT distinct(cell_type) FROM {project_name}_cell WHERE patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_type"
-        if filter_labeled
-        else f"SELECT distinct(cell_type) FROM {project_name}_cell WHERE patient_id = {patient_id} ORDER BY cell_type"
-    )
+):  # sourcery skip: remove-redundant-if
+    if filter_labeled:
+        count_cell_type = query_database(
+            f"SELECT count(distinct(cell_type)) as count_cell_type FROM {project_name}_cell WHERE patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_type"
+        )[0].get("count_cell_type", 0)
 
-    data_list = query_database(sql)
-    return [data["cell_type"] for data in data_list]
+        if count_cell_type == 0:
+            return None
+
+        sql = f"SELECT count(distinct(cell_type)) as count_cell_type FROM {project_name}_cell WHERE patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_type"
+
+    elif not filter_labeled:
+        sql = f"SELECT distinct(cell_type) FROM {project_name}_cell WHERE patient_id = {patient_id} ORDER BY cell_type"
+
+    return [data["cell_type"] for data in query_database(sql)]  # type: ignore
 
 
 def get_cell_number(
@@ -33,15 +41,20 @@ def get_cell_number(
     patient_id: int,
     cell_type: str,
     filter_labeled: bool = False,
-):
-    sql = (
-        f"SELECT distinct(cell_number) FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_number"
-        if filter_labeled
-        else f"SELECT cell_number FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} ORDER BY cell_number"
-    )
+):  # sourcery skip: remove-redundant-if
+    if filter_labeled:
+        count_cell_number = query_database(
+            f"SELECT count(distinct(cell_number)) as count_cell_number FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_number"
+        )[0].get("count_cell_number")
+        if count_cell_number > 0:
+            sql = f"SELECT distinct(cell_number) FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_number"
+        else:
+            return None
+    elif not filter_labeled:
+        sql = f"SELECT cell_number FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} ORDER BY cell_number"
 
     data_list = query_database(sql)
-    return [data["cell_number"] for data in data_list]
+    return [data["cell_number"] for data in data_list]  # type: ignore
 
 
 if __name__ == "__main__":
