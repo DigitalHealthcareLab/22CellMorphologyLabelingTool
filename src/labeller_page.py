@@ -4,16 +4,13 @@ from src.database import query_database
 from src.gdrive import GDriveCredential, GDriveDownloader
 from src.image import download_image, get_images, render_image
 from src.label import get_default_quality, save_quality
+from src.renderer import CellImageRenderer, TitleRenderer
 from src.sidebar import (
     get_cell_number,
     get_cell_type,
     get_patient_list,
     get_project_list,
 )
-
-
-def render_title():
-    st.title("""Tomocube Image Quality Labeller""")
 
 
 def render_sidebar(filter_labeled):
@@ -76,7 +73,7 @@ def render_images(
         if bf_cellimage is None:
             st.write("There is no BF image")
         else:
-            render_image(bf_path)
+            CellImageRenderer(bf_path).render(350)
             bf_quality = render_image_quality(
                 project_name, (bf_cellimage.image_id,)
             )
@@ -85,7 +82,7 @@ def render_images(
         if mip_cellimage is None:
             st.write("There is no MIP image")
         else:
-            render_image(mip_path)
+            CellImageRenderer(mip_path).render(350)
             mip_quality = render_image_quality(
                 project_name, (mip_cellimage.image_id, ht_cellimage.image_id)
             )
@@ -148,7 +145,8 @@ def app():
     credentials = GDriveCredential().credentials
     downloader = GDriveDownloader(credentials)
 
-    render_title()
+    title_renderer = TitleRenderer("Tomocube Image Quality Labeller")
+    title_renderer.render()
 
     (
         filter_labeled,

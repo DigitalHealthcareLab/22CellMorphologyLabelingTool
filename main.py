@@ -1,10 +1,10 @@
-import src.labeller as labeller
+import src.labeller_page as labeller_page
 from src.multipage import MultiPage
 
 
 def main():
     app = MultiPage()
-    app.add_page('Labeller', labeller.app)
+    app.add_page("Labeller_page", labeller_page.app)
     app.run()
 
 
