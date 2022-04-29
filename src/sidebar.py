@@ -21,19 +21,29 @@ def get_cell_type(
     project_name: str, patient_id: int, filter_labeled: bool = False
 ):  # sourcery skip: remove-redundant-if
     if filter_labeled:
-        count_cell_type = query_database(
-            f"SELECT count(distinct(cell_type)) as count_cell_type FROM {project_name}_cell WHERE patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_type"
-        )[0].get("count_cell_type", 0)
+        count_cell_type = _get_count_cell_type(project_name, patient_id)
 
         if count_cell_type == 0:
             return None
 
-        sql = f"SELECT count(distinct(cell_type)) as count_cell_type FROM {project_name}_cell WHERE patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_type"
+        sql = f"""SELECT distinct(cell_type) 
+                FROM {project_name}_cell 
+                WHERE patient_id = {patient_id} 
+                AND cell_id IN 
+                    (SELECT distinct(cell_id) 
+                    FROM {project_name}_image 
+                    WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_type"""
 
     elif not filter_labeled:
         sql = f"SELECT distinct(cell_type) FROM {project_name}_cell WHERE patient_id = {patient_id} ORDER BY cell_type"
 
     return [data["cell_type"] for data in query_database(sql)]  # type: ignore
+
+
+def _get_count_cell_type(project_name: str, patient_id: int) -> int:
+    return query_database(
+        f"SELECT count(distinct(cell_type)) as count_cell_type FROM {project_name}_cell WHERE patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_type"
+    )[0].get("count_cell_type", 0)
 
 
 def get_cell_number(
@@ -42,19 +52,29 @@ def get_cell_number(
     cell_type: str,
     filter_labeled: bool = False,
 ):  # sourcery skip: remove-redundant-if
+    if cell_type == "Not Available":
+        return None
+
     if filter_labeled:
-        count_cell_number = query_database(
-            f"SELECT count(distinct(cell_number)) as count_cell_number FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_number"
-        )[0].get("count_cell_number")
-        if count_cell_number > 0:
-            sql = f"SELECT distinct(cell_number) FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_number"
-        else:
+        count_cell_number = _get_count_cell_number(
+            project_name, patient_id, cell_type
+        )
+
+        if count_cell_number == 0:
             return None
+
+        sql = f"SELECT distinct(cell_number) FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_number"
+
     elif not filter_labeled:
         sql = f"SELECT cell_number FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} ORDER BY cell_number"
 
-    data_list = query_database(sql)
-    return [data["cell_number"] for data in data_list]  # type: ignore
+    return [data["cell_number"] for data in query_database(sql)]  # type: ignore
+
+
+def _get_count_cell_number(project_name, patient_id, cell_type):
+    return query_database(
+        f"SELECT count(distinct(cell_number)) as count_cell_number FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND patient_id = {patient_id} AND cell_id IN (SELECT distinct(cell_id) FROM {project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {project_name}_image_quality)) ORDER BY cell_number"
+    )[0].get("count_cell_number")
 
 
 if __name__ == "__main__":
