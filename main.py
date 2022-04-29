@@ -41,6 +41,8 @@ def render_sidebar(filter_labeled):
         else:
             cell_number = st.selectbox("Cell number", ["Not Available"])
 
+    with st.sidebar:
+
         def get_total_cell_count(project_name) -> int:
             return query_database(f"SELECT COUNT(*) FROM {project_name}_cell")[
                 0
@@ -71,16 +73,22 @@ def render_images(
 ):
     col1, col2 = st.columns(2)
     with col1:
-        render_image(bf_path)
-        bf_quality = render_image_quality(
-            project_name, (bf_cellimage.image_id,)
-        )
+        if bf_cellimage is None:
+            st.write("There is no BF image")
+        else:
+            render_image(bf_path)
+            bf_quality = render_image_quality(
+                project_name, (bf_cellimage.image_id,)
+            )
 
     with col2:
-        render_image(mip_path)
-        mip_default_quality = render_image_quality(
-            project_name, (mip_cellimage.image_id, ht_cellimage.image_id)
-        )
+        if mip_cellimage is None:
+            st.write("There is no MIP image")
+        else:
+            render_image(mip_path)
+            mip_quality = render_image_quality(
+                project_name, (mip_cellimage.image_id, ht_cellimage.image_id)
+            )
 
 
 def render_image_quality(project_name, cellimages):
@@ -98,38 +106,41 @@ def render_label_buttons(
     project_name, bf_cellimage, mip_cellimage, ht_cellimage
 ):
     col1, col2, col3, col4 = st.columns(4)
-    col1.button(
-        "Good",
-        on_click=save_quality,
-        args=(project_name, (bf_cellimage.image_id,), "Good"),
-        key="bf_good",
-    )
-    col2.button(
-        "Bad",
-        on_click=save_quality,
-        args=(project_name, (bf_cellimage.image_id,), "Bad"),
-        key="bf_bad",
-    )
-    col3.button(
-        "Good",
-        on_click=save_quality,
-        args=(
-            project_name,
-            (mip_cellimage.image_id, ht_cellimage.image_id),
+    if bf_cellimage is not None:
+        col1.button(
             "Good",
-        ),
-        key="mip_good",
-    )
-    col4.button(
-        "Bad",
-        on_click=save_quality,
-        args=(
-            project_name,
-            (mip_cellimage.image_id, ht_cellimage.image_id),
+            on_click=save_quality,
+            args=(project_name, (bf_cellimage.image_id,), "Good"),
+            key="bf_good",
+        )
+        col2.button(
             "Bad",
-        ),
-        key="mip_bad",
-    )
+            on_click=save_quality,
+            args=(project_name, (bf_cellimage.image_id,), "Bad"),
+            key="bf_bad",
+        )
+
+    if mip_cellimage is not None:
+        col3.button(
+            "Good",
+            on_click=save_quality,
+            args=(
+                project_name,
+                (mip_cellimage.image_id, ht_cellimage.image_id),
+                "Good",
+            ),
+            key="mip_good",
+        )
+        col4.button(
+            "Bad",
+            on_click=save_quality,
+            args=(
+                project_name,
+                (mip_cellimage.image_id, ht_cellimage.image_id),
+                "Bad",
+            ),
+            key="mip_bad",
+        )
 
 
 def main():
@@ -156,13 +167,19 @@ def main():
         bf_cellimage, mip_cellimage, ht_cellimage = get_images(
             project_name, patient_id, cell_type, cell_number
         )
+        if bf_cellimage is not None:
+            bf_path = download_image(
+                downloader, bf_cellimage.image_google_id, "image", "bf.tiff"
+            )
+        else:
+            bf_path = None
 
-        bf_path = download_image(
-            downloader, bf_cellimage.image_google_id, "image", "bf.tiff"
-        )
-        mip_path = download_image(
-            downloader, mip_cellimage.image_google_id, "image", "mip.tiff"
-        )
+        if mip_cellimage is not None:
+            mip_path = download_image(
+                downloader, mip_cellimage.image_google_id, "image", "mip.tiff"
+            )
+        else:
+            mip_path = None
 
         render_images(
             project_name,

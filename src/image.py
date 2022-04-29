@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import streamlit as st
@@ -16,8 +17,17 @@ class CellImage:
 
 def get_images(
     project_name, patient_id, cell_type, cell_number
-) -> tuple[CellImage, CellImage, CellImage]:
-    sql = f"SELECT image_id, google_drive_file_id, create_date, image_type FROM {project_name}_image WHERE cell_id = (SELECT cell_id FROM {project_name}_cell WHERE cell_type = '{cell_type}' AND cell_number = {cell_number} AND patient_id = {patient_id})"
+) -> tuple[
+    Union[CellImage, None], Union[CellImage, None], Union[CellImage, None]
+]:
+    sql = f"""SELECT image_id, google_drive_file_id, create_date, image_type 
+            FROM {project_name}_image 
+            WHERE cell_id = (SELECT cell_id 
+                            FROM {project_name}_cell 
+                            WHERE cell_type = '{cell_type}' 
+                            AND cell_number = {cell_number} 
+                            AND patient_id = {patient_id})"""
+
     result = query_database(sql)
     bf = get_cellimage(result, "BRIGHT_FIELD")
     mip = get_cellimage(result, "MIP")
@@ -25,9 +35,13 @@ def get_images(
     return bf, mip, ht
 
 
-def get_cellimage(data_list, image_type) -> CellImage:
-    result = [data for data in data_list if data["image_type"] == image_type][0]
-    return CellImage(result["image_id"], result["google_drive_file_id"])
+def get_cellimage(data_list, image_type) -> Union[CellImage, None]:
+    # sourcery skip: simplify-len-comparison, use-named-expression
+    result = [data for data in data_list if data["image_type"] == image_type]
+    if len(result) > 0:
+        return CellImage(result[0]["image_id"], result[0]["google_drive_file_id"])  # type: ignore
+    else:
+        return None
 
 
 def download_image(
