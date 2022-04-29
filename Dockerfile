@@ -1,26 +1,26 @@
-FROM python:3.9.7-slim
+#=============================================================================
+# Build environment
+FROM python:3.9.7-slim as build
 
-ENV YOUR_ENV=${YOUR_ENV} \
-    PYTHONFAULTHANDLER=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONHASHSEED=random \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    POETRY_VERSION=1.1.11
+# Install Poetry
+RUN pip install poetry
 
-# System deps:
-RUN pip install "poetry==$POETRY_VERSION" && pip install --upgrade pip 
+# Create Poetry environment
+COPY poetry.lock pyproject.toml 
+RUN POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=true \
+    poetry install
 
-# Copy only requirements to cache them in docker layer
-WORKDIR /code
-COPY poetry.lock pyproject.toml /code/
+# =============================================================================
+# Runtime environment
+FROM python:3.7-slim as runtime
 
-# Project initialization:
-RUN poetry config virtualenvs.create false \
-    && poetry install $(test "$YOUR_ENV" == production && echo "--no-dev") --no-interaction --no-ansi
+# Copy Poetry environment
+COPY --from=build .venv /code/.venv
 
-# Creating folders, and files for a project:
+# Update PATH
+ENV PATH="/code/.venv/bin:$PATH"
 COPY . /code
+WORKDIR /code
 
 CMD ["streamlit","run","main.py"]
