@@ -21,11 +21,11 @@ class ImageType(Enum):
 @dataclass
 class CellImage:
     image_id: int
-    image_google_id: str
-    image_type: ImageType
-    cell_type: str
-    cell_number: int
-    cell_id: int
+    image_google_id: str | None
+    image_type: ImageType | None
+    cell_type: str | None
+    cell_number: int | None
+    cell_id: int | None
     patient_id: int
     quality: Optional[int]
 
@@ -65,6 +65,9 @@ class CellImage:
     def from_cell_metadata(
         cls, project_name, patient_id, cell_type, cell_number
     ) -> list[CellImage]:
+        if (cell_type is None) | (cell_number is None):
+            return []
+
         data = query_database(
             f"""SELECT i.image_id, i.google_drive_file_id, i.image_type, c.cell_type, c.cell_number, c.cell_id, c.patient_id, q.quality
                 FROM (SELECT *
@@ -124,23 +127,3 @@ def download_image(
 ):
     downloader.download(google_file_id, download_path, download_filename)
     return Path(download_path, download_filename)
-
-
-def normalize_image(image_arr: np.ndarray) -> Image:
-    return Image.fromarray(
-        np.round(
-            (image_arr - image_arr.min())
-            / (image_arr.max() - image_arr.min())
-            * 255
-        ).astype(np.uint8)
-    )  # type: ignore
-
-
-def render_image(image_file):
-    image = Image.open(image_file)
-    image_arr = np.array(image)
-
-    if image_arr.min() > 255:
-        image = normalize_image(image_arr)
-
-    st.image(image, width=350)

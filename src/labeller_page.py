@@ -1,67 +1,44 @@
 import streamlit as st
 
-from src.database import query_database
 from src.gdrive import GDriveCredential, GDriveDownloader
-from src.image import download_image, get_images, render_image
+from src.image import download_image, get_images
 from src.label import get_default_quality, save_quality
-from src.renderer import CellImageRenderer, TitleRenderer
-from src.sidebar import (
-    get_cell_number,
-    get_cell_type,
-    get_patient_list,
-    get_project_list,
+from src.renderer import (
+    CellImageRenderer,
+    CellNumberRenderer,
+    CellTypeRenderer,
+    FilterCellNumberRenderer,
+    FilterCellTypeRenderer,
+    LabelProgressRenderer,
+    OptionRenderer,
+    PatientListRenderer,
+    ProjectListRenderer,
+    TitleRenderer,
 )
-
 
 def render_sidebar(filter_labeled):
     with st.sidebar:
-        filter_labeled = st.checkbox("Filter out labeled", value=filter_labeled)
+        st.write("Options:")
+        option_renderer = OptionRenderer("Filter labeled", filter_labeled)
+        filter_labeled = option_renderer.render()
 
-        project_list = get_project_list()
-        project_name = st.selectbox("Tomocube project", project_list)
-
-        patient_list = get_patient_list(project_name)
-        patient_id = st.selectbox("Patient ID", patient_list, index=0)
-
-        cell_type_list = get_cell_type(project_name, patient_id, filter_labeled)
-
-        if cell_type_list is not None:
-            cell_type = st.selectbox("Cell type", cell_type_list, index=0)
-        else:
-            cell_type = st.selectbox("Cell type", ["Not Available"])
-
-        cell_number_list = get_cell_number(
-            project_name, patient_id, cell_type, filter_labeled
+        project_name = ProjectListRenderer().render()
+        patient_id = PatientListRenderer(project_name).render()
+        cell_type = (
+            FilterCellTypeRenderer(project_name, patient_id).render()
+            if filter_labeled
+            else CellTypeRenderer(project_name, patient_id).render()
         )
-        if cell_number_list is not None:
-            cell_number = st.selectbox("Cell number", cell_number_list, index=0)
-        else:
-            cell_number = st.selectbox("Cell number", ["Not Available"])
-
-    with st.sidebar:
-
-        def get_total_cell_count(project_name) -> int:
-            return query_database(f"SELECT COUNT(*) FROM {project_name}_cell")[
-                0
-            ].get("COUNT(*)")
-
-        def get_labelled_cell_count(project_name) -> int:
-            return query_database(
-                f"SELECT count(distinct(i.cell_id)) as cell_count FROM {project_name}_image_quality q LEFT JOIN {project_name}_image i ON q.image_id = i.image_id"
-            )[0].get("cell_count")
-
-        total_cell_count = get_total_cell_count(project_name)
-        total_labelled_cell_count = get_labelled_cell_count(project_name)
-
-        st.write("The number of labeled cell:", total_labelled_cell_count)
-        st.write(
-            "The number of unlabeled cell:",
-            total_cell_count - total_labelled_cell_count,
+        cell_number = (
+            FilterCellNumberRenderer(
+                project_name, patient_id, cell_type
+            ).render()
+            if filter_labeled
+            else CellNumberRenderer(
+                project_name, patient_id, cell_type
+            ).render()
         )
-        st.write(
-            f"Progress: {total_labelled_cell_count / total_cell_count * 100:.0f}%"
-        )
-        my_bar = st.progress(total_labelled_cell_count / total_cell_count)
+
     return filter_labeled, project_name, patient_id, cell_type, cell_number
 
 
@@ -145,8 +122,7 @@ def app():
     credentials = GDriveCredential().credentials
     downloader = GDriveDownloader(credentials)
 
-    title_renderer = TitleRenderer("Tomocube Image Quality Labeller")
-    title_renderer.render()
+    TitleRenderer("Tomocube Image Quality Labeller").render()
 
     (
         filter_labeled,
@@ -155,6 +131,9 @@ def app():
         cell_type,
         cell_number,
     ) = render_sidebar(filter_labeled)
+
+    with st.sidebar:
+        LabelProgressRenderer(project_name).render()
 
     if (cell_type == "Not Available") | (cell_number == "Not Available"):
         st.write("Not Available images")
