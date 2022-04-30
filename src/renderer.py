@@ -76,7 +76,10 @@ class CellTypeRenderer:
         self.celltype_list = self.get_celltype_list()
 
     def get_celltype_list(self):
-        sql = f"""SELECT distinct(cell_type) FROM {self.project_name}_cell WHERE patient_id = {self.patient_id} ORDER BY cell_type"""
+        sql = f"""SELECT distinct(cell_type) 
+                FROM {self.project_name}_cell 
+                WHERE patient_id = {self.patient_id} 
+                ORDER BY cell_type"""
 
         return [data["cell_type"] for data in query_database(sql)]  # type: ignore
 
