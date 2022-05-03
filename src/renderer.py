@@ -21,6 +21,7 @@ def get_project_list():
     return [
         data["TABLE_NAME"].replace("_patient", "") for data in data_list  # type: ignore
     ]
+
 class Renderer(Protocol):
     def render(self):
         ...
@@ -82,6 +83,7 @@ class CellTypeRenderer:
                 FROM {self.project_name}_cell 
                 WHERE patient_id = {self.patient_id} 
                 ORDER BY cell_type"""
+
 
         return [data["cell_type"] for data in query_database(sql)]  # type: ignore
 
