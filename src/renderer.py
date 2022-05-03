@@ -9,6 +9,18 @@ from src.database import query_database
 from src.image import CellImage
 
 
+def get_project_list():
+    """Get project list based on mysql tables in tomocube database"""
+
+    data_list = query_database(
+        """SELECT TABLE_NAME
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = 'tomocube'
+        AND TABLE_NAME LIKE '%patient'"""
+    )
+    return [
+        data["TABLE_NAME"].replace("_patient", "") for data in data_list  # type: ignore
+    ]
 class Renderer(Protocol):
     def render(self):
         ...
@@ -36,17 +48,7 @@ class ProjectListRenderer:
         self.project_list = self.get_project_list()
 
     def get_project_list(self):
-        """Get project list based on mysql tables in tomocube database"""
-
-        data_list = query_database(
-            """SELECT TABLE_NAME
-            FROM information_schema.TABLES
-            WHERE TABLE_SCHEMA = 'tomocube'
-            AND TABLE_NAME LIKE '%patient'"""
-        )
-        return [
-            data["TABLE_NAME"].replace("_patient", "") for data in data_list  # type: ignore
-        ]
+        return get_project_list()
 
     def render(self):
         if len(self.project_list) == 0:
