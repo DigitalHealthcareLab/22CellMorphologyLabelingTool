@@ -22,6 +22,7 @@ def get_project_list():
         data["TABLE_NAME"].replace("_patient", "") for data in data_list  # type: ignore
     ]
 
+
 class Renderer(Protocol):
     def render(self):
         ...
@@ -69,29 +70,47 @@ class PatientListRenderer:
         return [data["patient_id"] for data in data_list]  # type: ignore
 
     def render(self):
-        return st.selectbox("Patient ID", self.data_list, index=0)
+        if self.data_list is not None:
+            return st.selectbox("Patient ID", self.data_list, index=0)
+        else:
+            return st.selectbox("Patient ID", [])
+
+
+class FilterPatientListRenderer(PatientListRenderer):
+    def get_datalist(self):
+        data_list = query_database(
+            f"""SELECT distinct(patient_id) 
+                FROM {self.project_name}_cell 
+                WHERE cell_id IN 
+                    (SELECT distinct(cell_id) 
+                    FROM {self.project_name}_image 
+                    WHERE image_id NOT IN (SELECT image_id FROM {self.project_name}_image_quality))
+            """
+        )
+        return [data["patient_id"] for data in data_list]  # type: ignore
 
 
 class CellTypeRenderer:
     def __init__(self, project_name, patient_id):
         self.project_name = project_name
         self.patient_id = patient_id
-        self.celltype_list = self.get_celltype_list()
+        self.data_list = (
+            None if self.patient_id is None else self.get_data_list()
+        )
 
-    def get_celltype_list(self):
+    def get_data_list(self):
         sql = f"""SELECT distinct(cell_type) 
                 FROM {self.project_name}_cell 
                 WHERE patient_id = {self.patient_id} 
                 ORDER BY cell_type"""
 
-
         return [data["cell_type"] for data in query_database(sql)]  # type: ignore
 
     def render(self):
-        if self.celltype_list is not None:
-            return st.selectbox("Cell type", self.celltype_list, index=0)
+        if self.data_list is not None:
+            return st.selectbox("Cell type", self.data_list, index=0)
         else:
-            return st.selectbox("Cell type", ["Not Available"])
+            return st.selectbox("Cell type", [])
 
 
 class FilterCellTypeRenderer(CellTypeRenderer):
@@ -114,7 +133,9 @@ class CellNumberRenderer:
         self.patient_id = patient_id
         self.cell_type = cell_type
         self.cellnumber_list = (
-            None if self.cell_type is None else self.get_cellnumber_list()
+            None
+            if (self.cell_type is None) | (self.patient_id is None)
+            else self.get_cellnumber_list()
         )
 
     def get_cellnumber_list(self):

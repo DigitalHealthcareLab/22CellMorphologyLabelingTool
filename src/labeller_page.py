@@ -9,6 +9,7 @@ from src.renderer import (
     CellTypeRenderer,
     FilterCellNumberRenderer,
     FilterCellTypeRenderer,
+    FilterPatientListRenderer,
     LabelProgressRenderer,
     OptionRenderer,
     PatientListRenderer,
@@ -24,7 +25,11 @@ def render_sidebar(filter_labeled):
         filter_labeled = option_renderer.render()
 
         project_name = ProjectListRenderer().render()
-        patient_id = PatientListRenderer(project_name).render()
+        patient_id = (
+            FilterPatientListRenderer(project_name).render()
+            if filter_labeled
+            else PatientListRenderer(project_name).render()
+        )
         cell_type = (
             FilterCellTypeRenderer(project_name, patient_id).render()
             if filter_labeled

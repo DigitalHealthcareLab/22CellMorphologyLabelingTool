@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -20,7 +21,9 @@ def create_cell_metadata_table(project_name):
     GROUP BY t.project_id, t.patient_id, t.cell_type, t.image_type, t.quality
     """
     data = pd.DataFrame(query_database(sql))
-    data["quality"] = data["quality"].replace({0: "Good", 1: "Bad"})
+    data["quality"] = data["quality"].replace(
+        {0: "Good", 1: "Bad", np.nan: "Unlabelled"}
+    )
     data = data[data.image_type != "MIP"]
     data = data.pivot(
         index=["project_id", "patient_id", "cell_type"],
