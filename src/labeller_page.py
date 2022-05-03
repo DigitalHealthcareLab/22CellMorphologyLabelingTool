@@ -16,6 +16,7 @@ from src.renderer import (
     TitleRenderer,
 )
 
+
 def render_sidebar(filter_labeled):
     with st.sidebar:
         st.write("Options:")
