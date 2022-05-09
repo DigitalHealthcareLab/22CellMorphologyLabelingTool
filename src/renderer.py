@@ -6,7 +6,7 @@ import streamlit as st
 from PIL import Image
 
 from src.database import query_database
-from src.image import CellImage
+from src.image import CellImageMeta
 
 
 def get_project_list():
@@ -196,7 +196,7 @@ class CellImageRenderer:
 class ImageQualityRenderer:
     __QualityRenderer = None
 
-    def __init__(self, project_name: str, cellimage_list: list[CellImage]):
+    def __init__(self, project_name: str, cellimage_list: list[CellImageMeta]):
         self.project_name = project_name
         self.cellimage_list = cellimage_list
 

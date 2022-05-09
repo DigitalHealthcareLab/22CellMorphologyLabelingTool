@@ -19,7 +19,7 @@ class ImageType(Enum):
 
 
 @dataclass
-class CellImage:
+class CellImageMeta:
     image_id: int
     image_google_id: str | None
     image_type: ImageType | None
@@ -30,7 +30,7 @@ class CellImage:
     quality: Optional[int]
 
     @classmethod
-    def from_image_id(cls, project_name, image_id) -> CellImage:
+    def from_image_id(cls, project_name, image_id) -> CellImageMeta:
         data = query_database(
             f"""SELECT 
                     i.image_id,
@@ -50,7 +50,7 @@ class CellImage:
                 lEFT JOIN {project_name}_image_quality q
                 ON i.image_id = q.image_id"""
         )
-        return CellImage(
+        return CellImageMeta(
             image_id,
             data[0].get("google_drive_file_id"),
             data[0].get("image_type"),
@@ -64,7 +64,7 @@ class CellImage:
     @classmethod
     def from_cell_metadata(
         cls, project_name, patient_id, cell_type, cell_number
-    ) -> list[CellImage]:
+    ) -> list[CellImageMeta]:
         if (cell_type is None) | (cell_number is None):
             return []
 
@@ -81,7 +81,7 @@ class CellImage:
                 ON i.image_id = q.image_id"""
         )
         return [
-            CellImage(
+            CellImageMeta(
                 d.get("image_id"),
                 d.get("google_drive_file_id"),
                 d.get("image_type"),
@@ -96,8 +96,8 @@ class CellImage:
 
 
 def find_cell_image_by_image_type(
-    cell_images: list[CellImage], image_type: ImageType
-) -> Union[CellImage, None]:
+    cell_images: list[CellImageMeta], image_type: ImageType
+) -> Union[CellImageMeta, None]:
     results = [
         cell_image
         for cell_image in cell_images
@@ -109,9 +109,11 @@ def find_cell_image_by_image_type(
 def get_images(
     project_name, patient_id, cell_type, cell_number
 ) -> tuple[
-    Union[CellImage, None], Union[CellImage, None], Union[CellImage, None]
+    Union[CellImageMeta, None],
+    Union[CellImageMeta, None],
+    Union[CellImageMeta, None],
 ]:
-    cell_images = CellImage.from_cell_metadata(
+    cell_images = CellImageMeta.from_cell_metadata(
         project_name, patient_id, cell_type, cell_number
     )
 
