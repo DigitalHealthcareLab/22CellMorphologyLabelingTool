@@ -1,13 +1,15 @@
+from functools import partial
+
 import src.center_label_page as center_label_page
 import src.labelled_page as labelled_page
 import src.labeller_page as labeller_page
 from src.gdrive import GDriveCredential, GDriveDownloader
 from src.multipage import MultiPage
 
+# TODO: downloader inject to each page
+
 
 def main():
-    downloader = GDriveDownloader(GDriveCredential().credentials)
-
     app = MultiPage()
     app.add_page("Quality Labeller page", labeller_page.app)
     app.add_page("Center Labeller page", center_label_page.app)

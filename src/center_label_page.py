@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2 as cv
 import numpy as np
 import streamlit as st
 import tifffile
@@ -11,6 +10,7 @@ from streamlit_custom_image_labeller import st_custom_image_labeller
 from src.cell_sidebar import render_sidebar
 from src.gdrive import GDriveCredential, GDriveDownloader
 from src.image import download_image, get_images
+from src.renderer import TitleRenderer
 
 
 @dataclass
@@ -18,8 +18,8 @@ class Point:
     x: int
     y: int
     z: int
-    
-    def write_to_database(project_name:str):
+
+    def write_to_database(project_name: str):
         pass
 
 
@@ -47,12 +47,43 @@ class TomocubeImage:
     def slice_axis(img_arr: np.ndarray, idx: int, axis: int) -> np.ndarray:
         return img_arr.take(indices=idx, axis=axis)
 
+    @classmethod
+    def image_for_streamlit(
+        cls, img_arr: np.ndarray, idx: int, axis: int
+    ) -> Image.Image:
+        return cls.numpy_to_image(
+            cls.slice_axis(img_arr, idx, axis).astype(np.uint8)
+        )
 
-def read_multiple_tiff(filename):
-    image = tifffile.imread(filename)
-    norm = np.zeros((image.shape[1], image.shape[2]))
-    final = cv.normalize(image, norm, 0, 255, cv.NORM_MINMAX)
-    return final
+    def render_morphology_all_axis(image):
+        st.subheader("Morphology")
+        col1, col2, col3 = st.columns(3)
+        z = col1.slider(
+            "z-axis", 0, image.shape[0] - 1, value=st.session_state["center"].z
+        )
+        col1.image(
+            TomocubeImage.image_for_streamlit(image, idx=z, axis=0),
+            use_column_width=True,
+            clamp=True,
+        )
+
+        x = col2.slider(
+            "x-axis", 0, image.shape[1] - 1, value=st.session_state["center"].x
+        )
+        col2.image(
+            TomocubeImage.image_for_streamlit(image, idx=x, axis=1),
+            use_column_width=True,
+            clamp=True,
+        )
+
+        y = col3.slider(
+            "y-axis", 0, image.shape[2] - 1, value=st.session_state["center"].y
+        )
+        col3.image(
+            TomocubeImage.image_for_streamlit(image, idx=y, axis=2),
+            use_column_width=True,
+            clamp=True,
+        )
 
 
 def app():
@@ -60,7 +91,7 @@ def app():
 
     filter_labeled = False
 
-    st.title("Tomocube Cell Center Labeller")
+    TitleRenderer("Tomocube Image Quality Labeller").render()
 
     (
         filter_labeled,
@@ -130,22 +161,5 @@ def app():
 
     st.write(st.session_state["center"])
 
-    image = read_multiple_tiff(ht_path)
-
-    ## streamlit code
-    st.subheader("Morphology")
-    col1, col2, col3 = st.columns(3)
-    z = col1.slider(
-        "z-axis", 0, image.shape[0] - 1, value=st.session_state["center"].z
-    )
-    col1.image(image[z, :, :], use_column_width=True, clamp=True)
-
-    x = col2.slider(
-        "x-axis", 0, image.shape[1] - 1, value=st.session_state["center"].x
-    )
-    col2.image(image[:, x, :], use_column_width=True, clamp=True)
-
-    y = col3.slider(
-        "y-axis", 0, image.shape[2] - 1, value=st.session_state["center"].y
-    )
-    col3.image(image[:, :, y], use_column_width=True, clamp=True)
+    image = sample_3d_image
+    render_morphology_all_axis(image)
