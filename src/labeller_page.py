@@ -1,5 +1,6 @@
 import streamlit as st
 
+from src.cell_sidebar import render_sidebar
 from src.gdrive import GDriveCredential, GDriveDownloader
 from src.image import download_image, get_images
 from src.label import get_default_quality, save_quality
@@ -16,36 +17,6 @@ from src.renderer import (
     ProjectListRenderer,
     TitleRenderer,
 )
-
-
-def render_sidebar(filter_labeled):
-    with st.sidebar:
-        st.write("Options:")
-        option_renderer = OptionRenderer("Filter labeled", filter_labeled)
-        filter_labeled = option_renderer.render()
-
-        project_name = ProjectListRenderer().render()
-        patient_id = (
-            FilterPatientListRenderer(project_name).render()
-            if filter_labeled
-            else PatientListRenderer(project_name).render()
-        )
-        cell_type = (
-            FilterCellTypeRenderer(project_name, patient_id).render()
-            if filter_labeled
-            else CellTypeRenderer(project_name, patient_id).render()
-        )
-        cell_number = (
-            FilterCellNumberRenderer(
-                project_name, patient_id, cell_type
-            ).render()
-            if filter_labeled
-            else CellNumberRenderer(
-                project_name, patient_id, cell_type
-            ).render()
-        )
-
-    return filter_labeled, project_name, patient_id, cell_type, cell_number
 
 
 def render_images(
@@ -125,9 +96,7 @@ def render_label_buttons(
 
 def app():
     filter_labeled = True
-    credentials = GDriveCredential().credentials
-    downloader = GDriveDownloader(credentials)
-
+    downloader = GDriveDownloader(GDriveCredential().credentials)
     TitleRenderer("Tomocube Image Quality Labeller").render()
 
     (
