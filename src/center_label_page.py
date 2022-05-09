@@ -46,7 +46,9 @@ class TomocubeImage:
         )
 
 
-def set_default_state(project_name:str, image_id:int, image_size:tuple[int, int, int]):
+def set_default_state(
+    project_name: str, image_id: int, image_size: tuple[int, int, int]
+):
     data = query_database(
         f"SELECT image_id, x, y, z FROM {project_name}_image_center WHERE image_id = {image_id}"
     )
@@ -59,6 +61,7 @@ def set_default_state(project_name:str, image_id:int, image_size:tuple[int, int,
         st.session_state["y"] = image_size[2] // 2
         st.session_state["z"] = image_size[0] // 2
 
+
 def render_center_labeller(image: np.ndarray):
     col1, col2 = st.columns(2)
 
@@ -70,6 +73,7 @@ def render_center_labeller(image: np.ndarray):
                     image, idx=st.session_state["z"], axis=0
                 )
             ),
+            point_color="red",
             point=(
                 st.session_state["y"],
                 st.session_state["x"],
@@ -90,6 +94,7 @@ def render_center_labeller(image: np.ndarray):
                     image, idx=st.session_state["y"], axis=2
                 )
             ),
+            point_color="red",
             point=(st.session_state["x"], st.session_state["z"]),
         )
         st.session_state["z"] = output2["y"]
@@ -183,7 +188,7 @@ def app():
     )
 
     st.write(
-        st.session_state["x"], st.session_state["y"], st.session_state["z"]
+        f'The coordinates of center point: ({st.session_state["x"]}, {st.session_state["y"]}, {st.session_state["z"]})'
     )
 
     if show_all_axis := st.checkbox("Show all axis", value=False):
