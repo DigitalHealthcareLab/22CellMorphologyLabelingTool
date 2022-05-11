@@ -74,7 +74,7 @@ def set_default_point(
     st.session_state["point"] = Point(x, y, z)
 
 
-def render_center_labeller(image: np.ndarray, point: Point):
+def render_center_labeller(image: np.ndarray):
     col1, col2 = st.columns(2)
 
     with col1:
@@ -143,6 +143,16 @@ def _render_each_axis(image: np.ndarray, axis: int) -> None:
     )
 
 
+def save_point(project_name):
+    write_to_database(
+        project_name,
+        st.session_state["image_meta"].image_id,
+        st.session_state["point"].x,
+        st.session_state["point"].y,
+        st.session_state["point"].z,
+    )
+
+
 def write_to_database(project_name, image_id, x, y, z):
     database = Database()
     sql = f"INSERT INTO {project_name}_image_center (image_id, x, y, z) VALUES ({image_id}, {x}, {y}, {z}) ON DUPLICATE KEY UPDATE x = {x}, y = {y}, z = {z}"
@@ -155,6 +165,10 @@ def write_to_database(project_name, image_id, x, y, z):
 def app():
     downloader = GDriveDownloader(GDriveCredential().credentials)
     filter_labeled = True
+    if "image_meta" not in st.session_state:
+        st.session_state["image_meta"] = None
+    if "image" not in st.session_state:
+        st.session_state["image"] = None
 
     TitleRenderer("Tomocube Image Quality Labeller").render()
 
@@ -171,40 +185,35 @@ def app():
         st.write(
             "Please uncheck filter out labeled or check the images really exist."
         )
-    else:
-        _, _, ht_cellimage = get_images(
-            project_name, patient_id, cell_type, cell_number
-        )
-
-    if ht_cellimage is not None:
-        ht_path = download_image(
-            downloader, ht_cellimage.image_google_id, "image", "ht.tiff"
-        )
-    else:
-        ht_path = None
-
-    if ht_path is None:
         return
 
-    image = TomocubeImage(ht_path).process()
+    _, _, ht = get_images(project_name, patient_id, cell_type, cell_number)
+
+    if ht != st.session_state["image_meta"]:
+        if ht is not None:
+            ht_path = download_image(
+                downloader, ht.image_google_id, "image", "ht.tiff"
+            )
+            st.session_state["image_meta"] = ht
+            st.session_state["image"] = TomocubeImage(ht_path).process()
+        else:
+            ht_path = None
+            return
 
     if "point" not in st.session_state:
-        set_default_point(project_name, ht_cellimage.image_id, image.shape)
+        set_default_point(
+            project_name,
+            st.session_state["image_meta"].image_id,
+            st.session_state["image"].shape,
+        )
 
-    render_center_labeller(image, st.session_state.point)
+    render_center_labeller(st.session_state["image"])
 
     st.write(
         f"The coordinates of center point: ({st.session_state['point'].x}, {st.session_state['point'].y}, {st.session_state['point'].z})"
     )
 
-    if st.button("Save Point"):
-        write_to_database(
-            project_name,
-            ht_cellimage.image_id,
-            st.session_state["point"].x,
-            st.session_state["point"].y,
-            st.session_state["point"].z,
-        )
+    st.button("Save Point", on_click=save_point, args=(project_name,))
 
     if show_all_axis := st.checkbox("Show all axis", value=False):
-        render_morphology_all_axis(image)
+        render_morphology_all_axis(st.session_state["image"])
