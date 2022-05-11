@@ -8,8 +8,10 @@ from PIL import Image
 from src.database import query_database
 from src.image import CellImageMeta
 
+
 def return_selectbox_result(lst):
     return lst if lst is not None else []
+
 
 class Renderer(Protocol):
     def render(self):
@@ -31,79 +33,6 @@ class OptionRenderer:
 
     def render(self):
         return st.checkbox(self.title, value=self.value)
-
-
-class CellImageRenderer:
-    def __init__(self, image_path: Path):
-        self.image_path = image_path
-        self.image = self.open_image()
-
-    def open_image(self):
-        image = Image.open(self.image_path)
-        image_arr = np.array(image)
-
-        if image_arr.min() > 255:
-            return self._normalize_image(image_arr)
-        return image
-
-    def _normalize_image(self, image_arr) -> Image:
-        return Image.fromarray(
-            np.round(
-                (image_arr - image_arr.min())
-                / (image_arr.max() - image_arr.min())
-                * 255
-            ).astype(np.uint8)
-        )  # type: ignore
-
-    def render(self, width):
-        st.image(self.image, width=width)
-
-
-class ImageQualityRenderer:
-    __QualityRenderer = None
-
-    def __init__(self, project_name: str, cellimage_list: list[CellImageMeta]):
-        self.project_name = project_name
-        self.cellimage_list = cellimage_list
-
-    def get_default_quality(self):
-        results = [
-            query_database(
-                f"SELECT quality FROM {self.project_name}_image_quality WHERE image_id = {self.image_id}"
-            )
-            for image_id in image_ids
-        ]
-
-        if len(results) == 1:
-            if len(results[0]) == 0:
-                return None
-            elif results[0][0].get("quality", None) == 0:
-                return "Good"
-            elif results[0][0].get("quality", None) == 1:
-                return "Bad"  # type: ignore
-
-        elif len(results) == 2:
-            if len(results[1]) == 0:
-                return None
-
-            if len(results[0]) == 0:
-                return None
-
-            elif (results[0][0].get("quality", None) == 0) and (
-                results[1][0].get("quality", None) == 0
-            ):
-                return "Good"
-            elif (results[0][0].get("quality", None) == 1) and (
-                results[1][0].get("quality", None) == 1
-            ):
-                return "Bad"
-            elif results[0][0].get("quality", None) != results[1][0].get(
-                "quality", None
-            ):
-                return None
-
-    def render(self):
-        self.__QualityRenderer.render()
 
 
 class LabelProgressRenderer:

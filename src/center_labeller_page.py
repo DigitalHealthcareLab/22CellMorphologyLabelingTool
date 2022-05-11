@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass
-from pathlib import Path
 
 import numpy as np
 import streamlit as st
@@ -10,7 +9,8 @@ from src.cell_selector import render_cell_selector
 from src.database import Database, query_database
 from src.gdrive import GDriveCredential, GDriveDownloader
 from src.image import TomocubeImage, download_image, get_images
-from src.renderer import TitleRenderer
+from src.renderer import LabelProgressRenderer, TitleRenderer
+from src.session import set_session_state
 
 
 @dataclass
@@ -111,7 +111,7 @@ def _render_each_axis(image: np.ndarray, axis: int) -> None:
 def save_point(project_name):
     _write_to_database(
         project_name,
-        st.session_state["image_meta"].image_id,
+        st.session_state["ht_image_meta"].image_id,
         st.session_state["point"].x,
         st.session_state["point"].y,
         st.session_state["point"].z,
@@ -130,10 +130,7 @@ def _write_to_database(project_name, image_id, x, y, z):
 def app():
     downloader = GDriveDownloader(GDriveCredential().credentials)
     filter_labeled = True
-    if "image_meta" not in st.session_state:
-        st.session_state["image_meta"] = None
-    if "image" not in st.session_state:
-        st.session_state["image"] = None
+    set_session_state("ht_image_meta", "ht_image")
 
     TitleRenderer("Tomocube Image Quality Labeller").render()
 
@@ -154,25 +151,21 @@ def app():
 
     _, _, ht = get_images(project_name, patient_id, cell_type, cell_number)
 
-    if ht != st.session_state["image_meta"]:
+    if ht != st.session_state["ht_image_meta"]:
         if ht is not None:
-            ht_path = download_image(
-                downloader, ht.image_google_id, "image", "ht.tiff"
+            download_image(
+                downloader, ht.image_google_id, "image", "ht.tiff", "ht_image"
             )
-            st.session_state["image_meta"] = ht
-            st.session_state["image"] = TomocubeImage(ht_path).process()
-        else:
-            ht_path = None
-            return
+        st.session_state["ht_image_meta"] = ht
 
     if "point" not in st.session_state:
         set_default_point(
             project_name,
-            st.session_state["image_meta"].image_id,
-            st.session_state["image"].shape,
+            st.session_state["ht_image_meta"].image_id,
+            st.session_state["ht_image"].shape,
         )
 
-    render_center_labeller(st.session_state["image"])
+    render_center_labeller(st.session_state["ht_image"])
 
     st.write(
         f"The coordinates of center point: ({st.session_state['point'].x}, {st.session_state['point'].y}, {st.session_state['point'].z})"
@@ -181,4 +174,7 @@ def app():
     st.button("Save Point", on_click=save_point, args=(project_name,))
 
     if show_all_axis := st.checkbox("Show all axis", value=False):
-        render_morphology_all_axis(st.session_state["image"])
+        render_morphology_all_axis(st.session_state["ht_image"])
+
+    with st.sidebar:
+        LabelProgressRenderer(project_name).render()

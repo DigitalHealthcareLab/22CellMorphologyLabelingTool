@@ -172,7 +172,12 @@ def get_images(
 
 
 def download_image(
-    downloader, google_file_id, download_path, download_filename
+    downloader, google_file_id, download_path, download_filename, key
 ):
     downloader.download(google_file_id, download_path, download_filename)
-    return Path(download_path, download_filename)
+    image_path = Path(download_path, download_filename)
+    if key == "bf_image":
+        st.session_state[key] = BFImage(image_path).process()
+    elif (key == "mip_image") | (key == 'ht_image'):
+        st.session_state[key] = TomocubeImage(image_path).process()
+    
