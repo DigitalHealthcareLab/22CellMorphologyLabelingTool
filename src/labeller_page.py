@@ -1,22 +1,10 @@
 import streamlit as st
 
-from src.cell_sidebar import render_sidebar
+from src.cell_selector import render_cell_selector
 from src.gdrive import GDriveCredential, GDriveDownloader
 from src.image import download_image, get_images
 from src.label import get_default_quality, save_quality
-from src.renderer import (
-    CellImageRenderer,
-    CellNumberRenderer,
-    CellTypeRenderer,
-    FilterCellNumberRenderer,
-    FilterCellTypeRenderer,
-    FilterPatientListRenderer,
-    LabelProgressRenderer,
-    OptionRenderer,
-    PatientListRenderer,
-    ProjectListRenderer,
-    TitleRenderer,
-)
+from src.renderer import CellImageRenderer, LabelProgressRenderer, TitleRenderer
 
 
 def render_images(
@@ -105,7 +93,7 @@ def app():
         patient_id,
         cell_type,
         cell_number,
-    ) = render_sidebar(filter_labeled)
+    ) = render_cell_selector(filter_labeled, label_type="quality")
 
     with st.sidebar:
         LabelProgressRenderer(project_name).render()

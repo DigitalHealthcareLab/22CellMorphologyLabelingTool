@@ -6,7 +6,7 @@ import tifffile
 from PIL import Image
 from streamlit_custom_image_labeller import st_custom_image_labeller
 
-from src.cell_sidebar import render_sidebar
+from src.cell_selector import render_cell_selector
 from src.database import Database, query_database
 from src.gdrive import GDriveCredential, GDriveDownloader
 from src.image import download_image, get_images
@@ -150,7 +150,7 @@ def app():
         patient_id,
         cell_type,
         cell_number,
-    ) = render_sidebar(filter_labeled)
+    ) = render_cell_selector(filter_labeled, label_type="center")
 
     if (cell_type == "Not Available") | (cell_number == "Not Available"):
         st.write("Not Available images")
