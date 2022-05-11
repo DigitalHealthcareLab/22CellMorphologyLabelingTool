@@ -7,6 +7,7 @@ from typing import Optional, Union
 
 import numpy as np
 import streamlit as st
+import tifffile
 from PIL import Image
 
 from src.database import query_database
@@ -93,6 +94,52 @@ class CellImageMeta:
             )  # type: ignore
             for d in data
         ]
+
+
+class TomocubeImage:
+    def __init__(self, image_path: Path):
+        self.image_path = image_path
+
+    def process(self):
+        image_arr = self.read_image()
+        image_arr = self.normalize_img(image_arr)
+        return image_arr.astype(np.uint8)
+
+    def read_image(self) -> np.ndarray:
+        return tifffile.imread(str(self.image_path))
+
+    @staticmethod
+    def normalize_img(img: np.ndarray) -> np.ndarray:
+        return (img - np.min(img)) / (np.max(img) - np.min(img)) * 255
+
+    @staticmethod
+    def numpy_to_image(img_arr: np.ndarray) -> Image.Image:
+        return Image.fromarray(img_arr)
+
+    @staticmethod
+    def slice_axis(img_arr: np.ndarray, idx: int, axis: int) -> np.ndarray:
+        return img_arr.take(indices=idx, axis=axis)
+
+    @classmethod
+    def image_for_streamlit(
+        cls, img_arr: np.ndarray, idx: int, axis: int
+    ) -> Image.Image:
+        return cls.numpy_to_image(
+            cls.slice_axis(img_arr, idx, axis).astype(np.uint8)
+        )
+
+    @staticmethod
+    def render(image, width):
+        st.image(image, width=width)
+
+
+class BFImage(TomocubeImage):
+    def read_image(self) -> np.ndarray:
+        return np.asarray(Image.open(self.image_path))
+
+    def process(self):
+        image_arr = self.read_image()
+        return image_arr.astype(np.uint8)
 
 
 def find_cell_image_by_image_type(

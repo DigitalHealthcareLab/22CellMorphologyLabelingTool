@@ -4,48 +4,13 @@ from pathlib import Path
 
 import numpy as np
 import streamlit as st
-import tifffile
-from PIL import Image
 from streamlit_custom_image_labeller import st_custom_image_labeller
 
 from src.cell_selector import render_cell_selector
 from src.database import Database, query_database
 from src.gdrive import GDriveCredential, GDriveDownloader
-from src.image import download_image, get_images
+from src.image import TomocubeImage, download_image, get_images
 from src.renderer import TitleRenderer
-
-
-class TomocubeImage:
-    def __init__(self, image_path: Path):
-        self.image_path = image_path
-
-    def process(self):
-        image_arr = self.read_image()
-        image_arr = self.normalize_img(image_arr)
-        return image_arr
-
-    def read_image(self) -> np.ndarray:
-        return tifffile.imread(str(self.image_path))
-
-    @staticmethod
-    def normalize_img(img: np.ndarray) -> np.ndarray:
-        return (img - np.min(img)) / (np.max(img) - np.min(img)) * 255
-
-    @staticmethod
-    def numpy_to_image(img_arr: np.ndarray) -> Image.Image:
-        return Image.fromarray(img_arr)
-
-    @staticmethod
-    def slice_axis(img_arr: np.ndarray, idx: int, axis: int) -> np.ndarray:
-        return img_arr.take(indices=idx, axis=axis)
-
-    @classmethod
-    def image_for_streamlit(
-        cls, img_arr: np.ndarray, idx: int, axis: int
-    ) -> Image.Image:
-        return cls.numpy_to_image(
-            cls.slice_axis(img_arr, idx, axis).astype(np.uint8)
-        )
 
 
 @dataclass
@@ -144,7 +109,7 @@ def _render_each_axis(image: np.ndarray, axis: int) -> None:
 
 
 def save_point(project_name):
-    write_to_database(
+    _write_to_database(
         project_name,
         st.session_state["image_meta"].image_id,
         st.session_state["point"].x,
@@ -153,7 +118,7 @@ def save_point(project_name):
     )
 
 
-def write_to_database(project_name, image_id, x, y, z):
+def _write_to_database(project_name, image_id, x, y, z):
     database = Database()
     sql = f"INSERT INTO {project_name}_image_center (image_id, x, y, z) VALUES ({image_id}, {x}, {y}, {z}) ON DUPLICATE KEY UPDATE x = {x}, y = {y}, z = {z}"
     database.execute_sql(sql)

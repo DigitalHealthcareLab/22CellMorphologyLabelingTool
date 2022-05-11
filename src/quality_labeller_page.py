@@ -2,9 +2,9 @@ import streamlit as st
 
 from src.cell_selector import render_cell_selector
 from src.gdrive import GDriveCredential, GDriveDownloader
-from src.image import download_image, get_images
+from src.image import BFImage, TomocubeImage, download_image, get_images
 from src.label import get_default_quality, save_quality
-from src.renderer import CellImageRenderer, LabelProgressRenderer, TitleRenderer
+from src.renderer import LabelProgressRenderer, TitleRenderer
 
 
 def render_images(
@@ -15,17 +15,24 @@ def render_images(
         if bf_cellimage is None:
             st.write("There is no BF image")
         else:
-            CellImageRenderer(bf_path).render(350)
-            bf_quality = render_image_quality(
-                project_name, (bf_cellimage.image_id,)
-            )
+            if bf_cellimage != st.session_state["bf_image_meta"]:
+                st.session_state["bf_image"] = BFImage(bf_path).process()
+                st.session_state["bf_image_meta"] = bf_cellimage
+            TomocubeImage.render(st.session_state["bf_image"], 350)
+            render_image_quality(project_name, (bf_cellimage.image_id,))
 
     with col2:
         if mip_cellimage is None:
             st.write("There is no MIP image")
         else:
-            CellImageRenderer(mip_path).render(350)
-            mip_quality = render_image_quality(
+            if mip_cellimage != st.session_state["mip_image_meta"]:
+                st.session_state["mip_image"] = TomocubeImage(
+                    mip_path
+                ).process()
+                st.session_state["mip_image_meta"] = mip_cellimage
+                st.session_state["ht_image_meta"] = ht_cellimage
+            TomocubeImage.render(st.session_state["mip_image"], 350)
+            render_image_quality(
                 project_name, (mip_cellimage.image_id, ht_cellimage.image_id)
             )
 
@@ -38,7 +45,6 @@ def render_image_quality(project_name, cellimages):
         st.error("Bad")
     elif quality is None:
         st.warning("No quality label")
-    return quality
 
 
 def render_label_buttons(
@@ -82,8 +88,22 @@ def render_label_buttons(
         )
 
 
+def set_session_state(*args):
+    for arg in args:
+        if arg not in st.session_state:
+            st.session_state[arg] = None
+
+
 def app():
     filter_labeled = True
+    set_session_state(
+        "bf_image_meta",
+        "mip_image_meta",
+        "ht_image_meta",
+        "bf_image",
+        "mip_image",
+    )
+
     downloader = GDriveDownloader(GDriveCredential().credentials)
     TitleRenderer("Tomocube Image Quality Labeller").render()
 
@@ -103,33 +123,35 @@ def app():
         st.write(
             "Please uncheck filter out labeled or check the images really exist."
         )
+        return
+
+    bf_cellimage, mip_cellimage, ht_cellimage = get_images(
+        project_name, patient_id, cell_type, cell_number
+    )
+
+    if bf_cellimage is not None:
+        bf_path = download_image(
+            downloader, bf_cellimage.image_google_id, "image", "bf.tiff"
+        )
     else:
-        bf_cellimage, mip_cellimage, ht_cellimage = get_images(
-            project_name, patient_id, cell_type, cell_number
-        )
-        if bf_cellimage is not None:
-            bf_path = download_image(
-                downloader, bf_cellimage.image_google_id, "image", "bf.tiff"
-            )
-        else:
-            bf_path = None
+        bf_path = None
 
-        if mip_cellimage is not None:
-            mip_path = download_image(
-                downloader, mip_cellimage.image_google_id, "image", "mip.tiff"
-            )
-        else:
-            mip_path = None
-
-        render_images(
-            project_name,
-            bf_cellimage,
-            mip_cellimage,
-            ht_cellimage,
-            bf_path,
-            mip_path,
+    if mip_cellimage is not None:
+        mip_path = download_image(
+            downloader, mip_cellimage.image_google_id, "image", "mip.tiff"
         )
+    else:
+        mip_path = None
 
-        render_label_buttons(
-            project_name, bf_cellimage, mip_cellimage, ht_cellimage
-        )
+    render_images(
+        project_name,
+        bf_cellimage,
+        mip_cellimage,
+        ht_cellimage,
+        bf_path,
+        mip_path,
+    )
+
+    render_label_buttons(
+        project_name, bf_cellimage, mip_cellimage, ht_cellimage
+    )
