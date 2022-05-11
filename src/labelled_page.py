@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from src.cell_selector import get_project_list
 from src.database import query_database
+from src.project_selector import get_project_list
 from src.renderer import TitleRenderer
 
 

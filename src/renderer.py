@@ -8,6 +8,8 @@ from PIL import Image
 from src.database import query_database
 from src.image import CellImageMeta
 
+def return_selectbox_result(lst):
+    return lst if lst is not None else []
 
 class Renderer(Protocol):
     def render(self):
