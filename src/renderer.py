@@ -1,12 +1,8 @@
-from pathlib import Path
 from typing import Protocol
 
-import numpy as np
 import streamlit as st
-from PIL import Image
 
 from src.database import query_database
-from src.image import CellImageMeta
 
 
 def return_selectbox_result(lst):
@@ -36,20 +32,24 @@ class OptionRenderer:
 
 
 class LabelProgressRenderer:
-    def __init__(self, project_name):
+    def __init__(self, project_name, label_type):
         self.project_name = project_name
+        self.label_type = label_type
         self.total_cell_count = self.get_total_cell_count()
         self.total_labelled_cell_count = self.get_labelled_cell_count()
+
+    def get_labelled_cell_count(self):
+        return query_database(
+            f"""SELECT count(distinct(i.cell_id)) as cell_count 
+                FROM {self.project_name}_image_{self.label_type} q 
+                LEFT JOIN {self.project_name}_image i 
+                ON q.image_id = i.image_id"""
+        )[0].get("cell_count")
 
     def get_total_cell_count(self) -> int:
         return query_database(f"SELECT COUNT(*) FROM {self.project_name}_cell")[
             0
         ].get("COUNT(*)")
-
-    def get_labelled_cell_count(self) -> int:
-        return query_database(
-            f"SELECT count(distinct(i.cell_id)) as cell_count FROM {self.project_name}_image_quality q LEFT JOIN {self.project_name}_image i ON q.image_id = i.image_id"
-        )[0].get("cell_count")
 
     def render(self):
         st.write("The number of labeled cell:", self.total_labelled_cell_count)

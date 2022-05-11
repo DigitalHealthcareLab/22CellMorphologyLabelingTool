@@ -173,8 +173,8 @@ def app():
 
     st.button("Save Point", on_click=save_point, args=(project_name,))
 
-    if show_all_axis := st.checkbox("Show all axis", value=False):
+    if st.checkbox("Show all axis", value=False):
         render_morphology_all_axis(st.session_state["ht_image"])
 
     with st.sidebar:
-        LabelProgressRenderer(project_name).render()
+        LabelProgressRenderer(project_name, "center").render()

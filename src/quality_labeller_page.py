@@ -139,4 +139,4 @@ def app():
         )
 
     with st.sidebar:
-        LabelProgressRenderer(project_name).render()
+        LabelProgressRenderer(project_name, "quality").render()

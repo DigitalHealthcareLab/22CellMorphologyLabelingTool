@@ -2,10 +2,9 @@ import streamlit as st
 
 from src.cell_number_selector import CellNumberRendererFactory
 from src.cell_type_selector import CellTypeRendererFactory
-from src.database import query_database
 from src.patient_id_selector import PatientListRendererFactory
 from src.project_selector import ProjectListRenderer
-from src.renderer import OptionRenderer, return_selectbox_result
+from src.renderer import OptionRenderer
 
 
 def render_cell_selector(filter_labeled, label_type):
