@@ -179,17 +179,18 @@ def app():
 
     render_center_labeller(sample_3d_image)
 
-    write_to_database(
-        project_name,
-        ht_cellimage.image_id,
-        st.session_state["x"],
-        st.session_state["y"],
-        st.session_state["z"],
-    )
-
     st.write(
         f'The coordinates of center point: ({st.session_state["x"]}, {st.session_state["y"]}, {st.session_state["z"]})'
     )
+
+    if st.button("Save Point"):
+        write_to_database(
+            project_name,
+            ht_cellimage.image_id,
+            st.session_state["x"],
+            st.session_state["y"],
+            st.session_state["z"],
+        )
 
     if show_all_axis := st.checkbox("Show all axis", value=False):
         render_morphology_all_axis(sample_3d_image)
