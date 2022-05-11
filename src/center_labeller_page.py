@@ -1,3 +1,5 @@
+import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -46,58 +48,71 @@ class TomocubeImage:
         )
 
 
-def set_default_state(
+@dataclass
+class Point:
+    x: int
+    y: int
+    z: int
+
+
+def set_default_point(
     project_name: str, image_id: int, image_size: tuple[int, int, int]
 ):
+
     data = query_database(
         f"SELECT image_id, x, y, z FROM {project_name}_image_center WHERE image_id = {image_id}"
     )
-    if len(data) >= 1:
-        st.session_state["x"] = data[0].get("x", image_size[1] // 2)
-        st.session_state["y"] = data[0].get("y", image_size[2] // 2)
-        st.session_state["z"] = data[0].get("z", image_size[0] // 2)
-    elif len(data) == 0:
-        st.session_state["x"] = image_size[1] // 2
-        st.session_state["y"] = image_size[2] // 2
-        st.session_state["z"] = image_size[0] // 2
+
+    default_point = Point(
+        image_size[1] // 2, image_size[2] // 2, image_size[0] // 2
+    )
+
+    x = data[0].get("x", default_point.x) if data is not () else default_point.x
+    y = data[0].get("x", default_point.y) if data is not () else default_point.y
+    z = data[0].get("x", default_point.z) if data is not () else default_point.z
+
+    st.session_state["point"] = Point(x, y, z)
 
 
-def render_center_labeller(image: np.ndarray):
+def render_center_labeller(image: np.ndarray, point: Point):
     col1, col2 = st.columns(2)
 
     with col1:
         st.header("HT - XY")
+        logging.info(f"render col1 - {st.session_state['point']}")
         output = st_custom_image_labeller(
             TomocubeImage.numpy_to_image(
                 TomocubeImage.slice_axis(
-                    image, idx=st.session_state["z"], axis=0
+                    image, idx=st.session_state["point"].z, axis=0
                 )
             ),
             point_color="red",
             point=(
-                st.session_state["y"],
-                st.session_state["x"],
+                st.session_state["point"].y,
+                st.session_state["point"].x,
             ),  # numpy array axis is not matching with mouse point axis
         )
-        st.session_state["y"] = output[
+        st.session_state["point"].y = output[
             "x"
         ]  # numpy array axis is not matching with mouse point axis
-        st.session_state["x"] = output[
+        st.session_state["point"].x = output[
             "y"
         ]  # numpy array axis is not matching with mouse point axis
 
     with col2:
         st.header("HT - YZ")
+        logging.info(f"render col2 - {st.session_state['point']}")
         output2 = st_custom_image_labeller(
             TomocubeImage.numpy_to_image(
                 TomocubeImage.slice_axis(
-                    image, idx=st.session_state["y"], axis=2
+                    image, idx=st.session_state["point"].y, axis=2
                 )
             ),
             point_color="red",
-            point=(st.session_state["x"], st.session_state["z"]),
+            point=(st.session_state["point"].x, st.session_state["point"].z),
         )
-        st.session_state["z"] = output2["y"]
+
+        st.session_state["point"].z = output2["y"]
 
 
 def render_morphology_all_axis(image: np.ndarray) -> None:
@@ -118,7 +133,7 @@ def _render_each_axis(image: np.ndarray, axis: int) -> None:
         f"{factory[axis]}-axis",
         0,
         image.shape[axis] - 1,
-        value=getattr(st.session_state, factory[axis]),
+        value=getattr(st.session_state.point, factory[axis]),
     )
 
     st.image(
@@ -139,8 +154,7 @@ def write_to_database(project_name, image_id, x, y, z):
 
 def app():
     downloader = GDriveDownloader(GDriveCredential().credentials)
-
-    filter_labeled = False
+    filter_labeled = True
 
     TitleRenderer("Tomocube Image Quality Labeller").render()
 
@@ -172,35 +186,25 @@ def app():
     if ht_path is None:
         return
 
-    sample_3d_image = TomocubeImage(ht_path).process()
+    image = TomocubeImage(ht_path).process()
 
-    image_size = sample_3d_image.shape
-    set_default_state(project_name, ht_cellimage.image_id, image_size)
+    if "point" not in st.session_state:
+        set_default_point(project_name, ht_cellimage.image_id, image.shape)
 
-    render_center_labeller(sample_3d_image)
+    render_center_labeller(image, st.session_state.point)
 
     st.write(
-        f'The coordinates of center point: ({st.session_state["x"]}, {st.session_state["y"]}, {st.session_state["z"]})'
+        f"The coordinates of center point: ({st.session_state['point'].x}, {st.session_state['point'].y}, {st.session_state['point'].z})"
     )
 
     if st.button("Save Point"):
         write_to_database(
             project_name,
             ht_cellimage.image_id,
-            st.session_state["x"],
-            st.session_state["y"],
-            st.session_state["z"],
+            st.session_state["point"].x,
+            st.session_state["point"].y,
+            st.session_state["point"].z,
         )
 
     if show_all_axis := st.checkbox("Show all axis", value=False):
-        render_morphology_all_axis(sample_3d_image)
-
-
-### sql for create table
-# CREATE TABLE 2022_tomocube_lungT_image_center(
-#    image_id INT(10) NOT NULL,
-# 	x INT(5) NOT NULL,
-# 	y INT(5) NOT NULL,
-#    z INT(5) NOT NULL,
-#    PRIMARY KEY (`image_id`)
-# )
+        render_morphology_all_axis(image)
