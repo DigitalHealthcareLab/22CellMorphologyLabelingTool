@@ -406,6 +406,20 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
+name = "imagecodecs"
+version = "2022.2.22"
+description = "Image transformation, compression, and decompression codecs"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+numpy = ">=1.19.2"
+
+[package.extras]
+all = ["matplotlib (>=3.3)", "tifffile (>=2021.11.2)", "numcodecs"]
+
+[[package]]
 name = "importlib-metadata"
 version = "4.11.3"
 description = "Read metadata from Python packages"
@@ -1511,7 +1525,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "a20e7f58562901c32fd9e31a3014304a816209c567eace2a4a5809ab4a87d7eb"
+content-hash = "1540264c73089d564e47020f78ad0d6606c2ed624736c55cb03cadbc3b9107bc"
 
 [metadata.files]
 altair = [
@@ -1752,6 +1766,25 @@ httplib2 = [
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
     {file = "idna-3.3.tar.gz", hash = "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"},
+]
+imagecodecs = [
+    {file = "imagecodecs-2022.2.22-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:48bb7e15bd21e1f40bf0c850c5350e1d7e465589ddd3314f20810305dde06f6d"},
+    {file = "imagecodecs-2022.2.22-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1d8ed85a73dccd286cc4ca4fa67961a76f109cd082bc329e0a067dcc3b176e4e"},
+    {file = "imagecodecs-2022.2.22-cp310-cp310-win32.whl", hash = "sha256:001f1fc6e3c4305a291cd9c77026460090447607ef31c3b59152fe7e5d3f0102"},
+    {file = "imagecodecs-2022.2.22-cp310-cp310-win_amd64.whl", hash = "sha256:d62e1661a2feee3de069f26dea635f0e5e77d860d70bd6806b574419c0e73a40"},
+    {file = "imagecodecs-2022.2.22-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:2b68537d70acab8b13f039c248fc070463eea5192d7277e4b6284631e7e64290"},
+    {file = "imagecodecs-2022.2.22-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:eed93f43e2a950c9dc37aa108aff71f2d39c43f1e8b801bcda7ba6cab318f0cb"},
+    {file = "imagecodecs-2022.2.22-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:288138cda96524b652db8b4592d8907b68162fc14ba6f37f5b7a36c797d82a45"},
+    {file = "imagecodecs-2022.2.22-cp38-cp38-win32.whl", hash = "sha256:7247fbdb94c93aa36e9360fae7bf9af9518e27868778203a13772711a62b4f8f"},
+    {file = "imagecodecs-2022.2.22-cp38-cp38-win_amd64.whl", hash = "sha256:34d058ad1cd444d36a0a7e426b9fd5b22a0875ea1a1252f0db7c4a170315d191"},
+    {file = "imagecodecs-2022.2.22-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:68c3bef82ba6a6496b9e1118832c95e9ba72264fee0e7c852536ed76430d9da5"},
+    {file = "imagecodecs-2022.2.22-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:87878ae9fe73214735b05fc99ea3d878ef7fee0dff890fa0f94c40973d2ff15d"},
+    {file = "imagecodecs-2022.2.22-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f548073f5d6f45fac62549c4c683adede847fca54492965dd4fcffc55ac6ffc0"},
+    {file = "imagecodecs-2022.2.22-cp39-cp39-win32.whl", hash = "sha256:d76853451f57aa4c2376853272ce07903fd60562c895e207ddbfa8fc7cde3d1d"},
+    {file = "imagecodecs-2022.2.22-cp39-cp39-win_amd64.whl", hash = "sha256:30179978120ae1bb27721d13698fda965b7bf0fc2344f8a939e51491c3c74455"},
+    {file = "imagecodecs-2022.2.22-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:35284f3573da2449ecdf26b7d7e245f973dc29abed45c1d4213917655b633b89"},
+    {file = "imagecodecs-2022.2.22-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:25bf46b7acd2aba5fbfbefe52568f14d1466aa71e9134221e694d01f52e805a9"},
+    {file = "imagecodecs-2022.2.22.tar.gz", hash = "sha256:062bef6b003290a8163abed2744b406854238208dfdd41cf7165253c6e01c0bd"},
 ]
 importlib-metadata = [
     {file = "importlib_metadata-4.11.3-py3-none-any.whl", hash = "sha256:1208431ca90a8cca1a6b8af391bb53c1a2db74e5d1cef6ddced95d4b2062edc6"},
