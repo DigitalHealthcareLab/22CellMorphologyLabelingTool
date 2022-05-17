@@ -1,3 +1,6 @@
+import logging
+from sqlite3 import sqlite_version_info
+
 import streamlit as st
 
 from src.database import query_database
@@ -47,6 +50,9 @@ class FilterQualityCellNumberRenderer(FilterCellNumberRenderer):
                     (SELECT distinct(cell_id) FROM {self.project_name}_image WHERE image_id NOT IN (SELECT image_id FROM {self.project_name}_image_{self.label_type})) 
                 ORDER BY cell_number"""
 
+        logging.info(sql)
+        logging.info([data["cell_number"] for data in query_database(sql)])
+
         return return_selectbox_result(
             [data["cell_number"] for data in query_database(sql)]
         )
@@ -64,7 +70,8 @@ class FilterCenterCellNumberRenderer(FilterCellNumberRenderer):
                     WHERE image_id NOT IN (SELECT image_id FROM {self.project_name}_image_{self.label_type})
                     AND image_type = 'HOLOTOMOGRAPHY') 
                 ORDER BY cell_number"""
-
+        logging.info(sql)
+        logging.info([data["cell_number"] for data in query_database(sql)])
         return return_selectbox_result(
             [data["cell_number"] for data in query_database(sql)]
         )

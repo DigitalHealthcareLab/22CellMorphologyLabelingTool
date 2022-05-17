@@ -1,3 +1,5 @@
+import logging
+
 import streamlit as st
 
 from src.cell_number_selector import CellNumberRendererFactory
@@ -7,42 +9,51 @@ from src.project_selector import ProjectListRenderer
 from src.renderer import OptionRenderer
 
 
-def render_cell_selector(filter_labeled, label_type):
+def render_cell_selector(label_type):
+    logging.info("Render Sidebar Cell Selector")
     with st.sidebar:
         st.write("Options:")
-        option_renderer = OptionRenderer("Filter labeled", filter_labeled)
-        filter_labeled = option_renderer.render()
+        option_renderer = OptionRenderer(
+            "Filter labeled", st.session_state[f"{label_type}_filter_labeled"]
+        )
+        st.session_state[
+            f"{label_type}_filter_labeled"
+        ] = option_renderer.render()
 
-        project_name = ProjectListRenderer("Tomocube project").render()
-        patient_id = (
+        st.session_state[f"{label_type}_project_name"] = ProjectListRenderer(
+            "Tomocube project"
+        ).render()
+
+        st.session_state[f"{label_type}_patient_id"] = (
             PatientListRendererFactory()
             .get_renderer(
-                "Patient ID", project_name, filter_labeled, label_type
+                "Patient ID",
+                st.session_state[f"{label_type}_project_name"],
+                st.session_state[f"{label_type}_filter_labeled"],
+                label_type,
             )
             .render()
         )
-        cell_type = (
+        st.session_state[f"{label_type}_cell_type"] = (
             CellTypeRendererFactory()
             .get_renderer(
                 "Cell Type",
-                project_name,
-                patient_id,
-                filter_labeled,
+                st.session_state[f"{label_type}_project_name"],
+                st.session_state[f"{label_type}_patient_id"],
+                st.session_state[f"{label_type}_filter_labeled"],
                 label_type,
             )
             .render()
         )
-        cell_number = (
+        st.session_state[f"{label_type}_cell_number"] = (
             CellNumberRendererFactory()
             .get_renderer(
                 "Cell Number",
-                project_name,
-                patient_id,
-                cell_type,
-                filter_labeled,
+                st.session_state[f"{label_type}_project_name"],
+                st.session_state[f"{label_type}_patient_id"],
+                st.session_state[f"{label_type}_cell_type"],
+                st.session_state[f"{label_type}_filter_labeled"],
                 label_type,
             )
             .render()
         )
-
-    return filter_labeled, project_name, patient_id, cell_type, cell_number

@@ -111,7 +111,7 @@ def _render_each_axis(image: np.ndarray, axis: int) -> None:
 def save_point(project_name):
     _write_to_database(
         project_name,
-        st.session_state["ht_image_meta"].image_id,
+        st.session_state["ht_image_meta_center"].image_id,
         st.session_state["point"].x,
         st.session_state["point"].y,
         st.session_state["point"].z,
@@ -129,39 +129,49 @@ def _write_to_database(project_name, image_id, x, y, z):
 
 def app():
     downloader = GDriveDownloader(GDriveCredential().credentials)
-    filter_labeled = True
-    set_session_state("ht_image_meta", "ht_image")
+    set_session_state(
+        "center_filter_labeled",
+        "center_project_name",
+        "center_patient_id",
+        "center_cell_type",
+        "center_cell_number",
+    )
+    st.session_state["center_filter_labeled"] = True
+
+    set_session_state("ht_image_meta_center", "ht_image")
 
     TitleRenderer("Tomocube Image Quality Labeller").render()
 
-    (
-        filter_labeled,
-        project_name,
-        patient_id,
-        cell_type,
-        cell_number,
-    ) = render_cell_selector(filter_labeled, label_type="center")
+    render_cell_selector(label_type="center")  # type: ignore
 
-    if (cell_type == "Not Available") | (cell_number == "Not Available"):
+    if (st.session_state["center_cell_type"] == "Not Available") | (
+        st.session_state["center_cell_number"] == "Not Available"
+    ):
         st.write("Not Available images")
         st.write(
             "Please uncheck filter out labeled or check the images really exist."
         )
         return
 
-    _, _, ht = get_images(project_name, patient_id, cell_type, cell_number)
+    _, _, ht = get_images(
+        st.session_state["center_project_name"],
+        st.session_state["center_patient_id"],
+        st.session_state["center_cell_type"],
+        st.session_state["center_cell_number"],
+    )
 
-    if ht != st.session_state["ht_image_meta"]:
+    if ht != st.session_state["ht_image_meta_center"]:
         if ht is not None:
             download_image(
                 downloader, ht.image_google_id, "image", "ht.tiff", "ht_image"
             )
-        st.session_state["ht_image_meta"] = ht
+        st.session_state["ht_image_meta_center"] = ht
+    logging.info(st.session_state["ht_image_meta_center"])
 
     if "point" not in st.session_state:
         set_default_point(
-            project_name,
-            st.session_state["ht_image_meta"].image_id,
+            st.session_state["center_project_name"],
+            st.session_state["ht_image_meta_center"].image_id,
             st.session_state["ht_image"].shape,
         )
 
@@ -171,10 +181,16 @@ def app():
         f"The coordinates of center point: ({st.session_state['point'].x}, {st.session_state['point'].y}, {st.session_state['point'].z})"
     )
 
-    st.button("Save Point", on_click=save_point, args=(project_name,))
+    st.button(
+        "Save Point",
+        on_click=save_point,
+        args=(st.session_state["center_project_name"],),
+    )
 
     if st.checkbox("Show all axis", value=False):
         render_morphology_all_axis(st.session_state["ht_image"])
 
     with st.sidebar:
-        LabelProgressRenderer(project_name, "center").render()
+        LabelProgressRenderer(
+            st.session_state["center_project_name"], "center"
+        ).render()

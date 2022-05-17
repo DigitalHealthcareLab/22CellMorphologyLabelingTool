@@ -18,11 +18,19 @@ def render_image_quality(quality: int) -> None:
 
 
 def app():
-    filter_labeled = True
+    set_session_state(
+        "quality_filter_labeled",
+        "quality_project_name",
+        "quality_patient_id",
+        "quality_cell_type",
+        "quality_cell_number",
+    )
+    st.session_state["quality_filter_labeled"] = True
+
     set_session_state(
         "bf_image_meta",
         "mip_image_meta",
-        "ht_image_meta",
+        "ht_image_meta_quality",
         "bf_image",
         "mip_image",
         "bf_quality",
@@ -32,15 +40,11 @@ def app():
     downloader = GDriveDownloader(GDriveCredential().credentials)
     TitleRenderer("Tomocube Image Quality Labeller").render()
 
-    (
-        filter_labeled,
-        project_name,
-        patient_id,
-        cell_type,
-        cell_number,
-    ) = render_cell_selector(filter_labeled, label_type="quality")
+    render_cell_selector(label_type="quality")
 
-    if (cell_type == "Not Available") | (cell_number == "Not Available"):
+    if (st.session_state["quality_cell_type"] == "Not Available") | (
+        st.session_state["quality_cell_number"] == "Not Available"
+    ):
         st.write("Not Available images")
         st.write(
             "Please uncheck filter out labeled or check the images really exist."
@@ -48,7 +52,10 @@ def app():
         return
 
     bf_cellimage, mip_cellimage, ht_cellimage = get_images(
-        project_name, patient_id, cell_type, cell_number
+        st.session_state["quality_project_name"],
+        st.session_state["quality_patient_id"],
+        st.session_state["quality_cell_type"],
+        st.session_state["quality_cell_number"],
     )
 
     if bf_cellimage != st.session_state["bf_image_meta"]:
@@ -62,7 +69,9 @@ def app():
             )
             st.session_state["bf_image_meta"] = bf_cellimage
             get_default_quality(
-                project_name, bf_cellimage.image_id, "bf_quality"
+                st.session_state["quality_project_name"],
+                bf_cellimage.image_id,
+                "bf_quality",
             )
         else:
             st.session_state["bf_image"] = None
@@ -77,9 +86,11 @@ def app():
                 "mip_image",
             )
             st.session_state["mip_image_meta"] = mip_cellimage
-            st.session_state["ht_image_meta"] = ht_cellimage
+            st.session_state["ht_image_meta_quality"] = ht_cellimage
             get_default_quality(
-                project_name, mip_cellimage.image_id, "mip_quality"
+                st.session_state["quality_project_name"],
+                mip_cellimage.image_id,
+                "mip_quality",
             )
         else:
             st.session_state["mip_image"] = None
@@ -100,29 +111,39 @@ def app():
             render_image_quality(st.session_state["mip_quality"])
 
     col1, col2, col3, col4 = st.columns(4)
-    if bf_cellimage is not None:
+    if st.session_state["bf_image"] is not None:
         col1.button(
             "Good",
             on_click=save_quality,
-            args=(project_name, (bf_cellimage.image_id,), "Good", "bf_quality"),
+            args=(
+                st.session_state["quality_project_name"],
+                (st.session_state["bf_image_meta"].image_id,),
+                "Good",
+            ),
             key="bf_good",
         )
         col2.button(
             "Bad",
             on_click=save_quality,
-            args=(project_name, (bf_cellimage.image_id,), "Bad", "bf_quality"),
+            args=(
+                st.session_state["quality_project_name"],
+                (st.session_state["bf_image_meta"].image_id,),
+                "Bad",
+            ),
             key="bf_bad",
         )
 
-    if mip_cellimage is not None:
+    if st.session_state["mip_image"] is not None:
         col3.button(
             "Good",
             on_click=save_quality,
             args=(
-                project_name,
-                (mip_cellimage.image_id, ht_cellimage.image_id),
+                st.session_state["quality_project_name"],
+                (
+                    st.session_state["mip_image_meta"].image_id,
+                    st.session_state["ht_image_meta_quality"].image_id,
+                ),
                 "Good",
-                "mip_quality",
             ),
             key="mip_good",
         )
@@ -130,13 +151,17 @@ def app():
             "Bad",
             on_click=save_quality,
             args=(
-                project_name,
-                (mip_cellimage.image_id, ht_cellimage.image_id),
+                st.session_state["quality_project_name"],
+                (
+                    st.session_state["mip_image_meta"].image_id,
+                    st.session_state["ht_image_meta_quality"].image_id,
+                ),
                 "Bad",
-                "mip_quality",
             ),
             key="mip_bad",
         )
 
     with st.sidebar:
-        LabelProgressRenderer(project_name, "quality").render()
+        LabelProgressRenderer(
+            st.session_state["quality_project_name"], "quality"
+        ).render()
