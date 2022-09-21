@@ -9,17 +9,28 @@
 
 - The image quality is important to decide whether the image was included in dataset or not.
 
+## Prerequisite
+- [Docker](https://docs.docker.com/)
+- [Docker-compose](https://docs.docker.com/compose/)
+- python 3.9
+- poetry
+- Images should uploaded on google drive.
+- Images would be fetches via google drive API.
+
 ## Preprocess
+- Install all dependencies with [poetry](https://python-poetry.org/)
 ```
 poetry install && poetry 
 ```
 ## Process
-
+- run streamlit 
 ```
 streamlit main.py
 ```
 
 ## Docker deploy
+- deply with docker-compose
+- port could be changed with changing `docker-compose.yaml` file
 ```
 docker-compose up -d
 ```
