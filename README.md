@@ -9,10 +9,20 @@
 
 - The image quality is important to decide whether the image was included in dataset or not.
 
+## Preprocess
+```
+poetry install && poetry 
+```
 ## Process
 
 ```
 streamlit main.py
 ```
+
+## Docker deploy
+```
+docker-compose up -d
+```
+
 ## Screenshot
 <img width="1792" alt="image" src="https://user-images.githubusercontent.com/52244362/165658149-8861e39e-02c8-4349-9dba-625723c3ad75.png">
